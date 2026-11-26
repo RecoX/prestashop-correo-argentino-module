@@ -1,0 +1,28 @@
+{
+  "name": "conreco/correoargentino",
+  "description": "Correo Argentino PAQ.AR shipping module for PrestaShop 9. Shows live rates at checkout and imports shipments into MiCorreo.",
+  "type": "prestashop-module",
+  "version": "1.1.0",
+  "license": "proprietary",
+  "authors": [
+    {
+      "name": "Conreco Limited",
+      "email": "lucas@conreco.com.ar",
+      "homepage": "https://conreco.com.ar",
+      "role": "Developer"
+    }
+  ],
+  "support": {
+    "email": "lucas@conreco.com.ar",
+    "source": "https://github.com/RecoX/prestashop-correo-argentino-module"
+  },
+  "require": {
+    "php": ">=7.4"
+  },
+  "extra": {
+    "prestashop": {
+      "min": "9.0.0",
+      "max": "9.99.99"
+    }
+  }
+}

@@ -1,0 +1,42 @@
+CORREO ARGENTINO PAQAR MODULE — COMMERCIAL LICENSE
+====================================================
+
+Copyright (c) 2026 Conreco Limited
+Author: Lucas Recoaro <lucas@conreco.com.ar>
+
+GRANT OF LICENSE
+
+Subject to the terms of this license and payment of the applicable license fee,
+Conreco Limited grants you a non-exclusive, non-transferable license to install
+and use this software module ("the Module") on a single PrestaShop installation
+that you own or operate.
+
+PERMITTED USES
+
+- Install and activate the Module on ONE (1) PrestaShop store.
+- Modify the Module for your own use on that store.
+- Make backup copies for archival purposes.
+
+RESTRICTIONS
+
+- You may NOT redistribute, resell, sublicense, or transfer the Module or any
+  modified version to any third party.
+- You may NOT publish the Module's source code publicly (e.g. on GitHub, npm,
+  or any public repository) without prior written permission from Conreco Limited.
+- You may NOT use the Module on more than one (1) store without purchasing
+  additional licenses.
+- Removing or altering the copyright notices in any source file is prohibited.
+
+DISCLAIMER OF WARRANTY
+
+THE MODULE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL
+CONRECO LIMITED BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING
+FROM USE OF THE MODULE.
+
+GOVERNING LAW
+
+This license is governed by the laws of New Zealand.
+
+For licensing enquiries: lucas@conreco.com.ar

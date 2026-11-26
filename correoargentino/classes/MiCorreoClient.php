@@ -2,6 +2,10 @@
 /**
  * MiCorreoClient — HTTP wrapper for the Correo Argentino MiCorreo API v1.
  *
+ * @author    Conreco Limited <lucas@conreco.com.ar>
+ * @copyright 2026 Conreco Limited
+ * @license   Commercial — see LICENSE.txt
+ *
  * Handles:
  *  - Basic auth token acquisition (POST /token)
  *  - JWT caching and auto-refresh via PS Configuration
