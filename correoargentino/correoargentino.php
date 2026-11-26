@@ -129,8 +129,10 @@ class CorreoArgentino extends CarrierModule
 
     public function uninstall()
     {
+        // Delete carriers created by this module
         $this->_deleteCarriers();
 
+        // Delete all configuration keys
         $keys = [
             self::CFG_USER_TOKEN,
             self::CFG_PASSWORD_TOKEN,
@@ -184,6 +186,7 @@ class CorreoArgentino extends CarrierModule
             $carrier->external_module_name = $this->name;
             $carrier->shipping_method      = 2; // by price
 
+            // Delay string must be set for all active languages
             foreach (Language::getLanguages() as $lang) {
                 $carrier->delay[$lang['id_lang']] = $data['delay'];
             }
@@ -192,21 +195,25 @@ class CorreoArgentino extends CarrierModule
                 return false;
             }
 
+            // Associate carrier to all zones
             foreach (Zone::getZones(true) as $zone) {
                 $carrier->addZone($zone['id_zone']);
             }
 
+            // Associate carrier to all groups
             foreach (Group::getGroups(true) as $group) {
                 $carrier->addGroup($group['id_group']);
             }
 
-            // Catch-all price range (actual price from getOrderShippingCost)
+            // Add a catch-all price range so the carrier is selectable at checkout.
+            // The actual price is returned dynamically by getOrderShippingCost().
             $range = new RangePrice();
             $range->id_carrier = $carrier->id;
             $range->delimiter1 = '0';
             $range->delimiter2 = '10000';
             $range->add();
 
+            // Add a shipping fee of 0 for that range (actual price comes from getOrderShippingCost)
             Db::getInstance()->insert('delivery', [
                 'id_carrier'      => (int) $carrier->id,
                 'id_range_price'  => (int) $range->id,
@@ -215,9 +222,11 @@ class CorreoArgentino extends CarrierModule
                 'price'           => '0',
             ]);
 
+            // Persist carrier ID so we can identify D vs S in hooks
             $cfgKey = ($type === 'D') ? self::CFG_CARRIER_ID_D : self::CFG_CARRIER_ID_S;
             Configuration::updateValue($cfgKey, $carrier->id);
 
+            // Copy module logo to carrier image directory
             $logoSrc = __DIR__ . '/logo.png';
             $logoDst = _PS_SHIP_IMG_DIR_ . (int) $carrier->id . '.jpg';
             if (file_exists($logoSrc)) {
@@ -372,13 +381,18 @@ class CorreoArgentino extends CarrierModule
         $carrierIdD = (int) Configuration::get(self::CFG_CARRIER_ID_D);
         $carrierIdS = (int) Configuration::get(self::CFG_CARRIER_ID_S);
 
+        // Only handle orders using one of our carriers
         if ($carrierId !== $carrierIdD && $carrierId !== $carrierIdS) {
             return;
         }
 
         $deliveryType = ($carrierId === $carrierIdD) ? 'D' : 'S';
+
+        // Get delivery address and customer for recipient data
         $address      = new Address($order->id_address_delivery);
         $customer     = new Customer($order->id_customer);
+
+        // Build cart dimensions from order products
         $cart         = new Cart($order->id_cart);
 
         $dimensions = $this->_computeCartDimensions($cart);
@@ -412,6 +426,8 @@ class CorreoArgentino extends CarrierModule
             ],
         ];
 
+        // For home delivery, include the full destination address.
+        // Sucursal (S) only needs the agency code, which MiCorreo derives from the carrier.
         if ($deliveryType === 'D') {
             $state = new State($address->id_state);
             $payload['shipping']['address'] = [
@@ -474,6 +490,7 @@ class CorreoArgentino extends CarrierModule
             self::CFG_OFFER_SUCURSAL  => (int) Tools::getValue('CORREOARG_OFFER_SUCURSAL'),
         ];
 
+        // Basic validation — required fields must not be empty
         foreach ([self::CFG_USER_TOKEN, self::CFG_PASSWORD_TOKEN, self::CFG_EMAIL, self::CFG_ORIGIN_POSTAL] as $required) {
             if (empty($fields[$required])) {
                 return $this->displayError(
@@ -499,6 +516,7 @@ class CorreoArgentino extends CarrierModule
                 $fields[self::CFG_PASSWORD_TOKEN]
             );
 
+            // Validate MiCorreo account credentials and fetch customerId
             $validated = $client->validateUser(
                 $fields[self::CFG_EMAIL],
                 $fields[self::CFG_PASSWORD]
@@ -517,6 +535,8 @@ class CorreoArgentino extends CarrierModule
                 $this->trans('Credenciales guardadas pero no se pudo obtener el Customer ID.', [], 'Modules.Correoargentino.Admin')
             );
         } catch (Exception $e) {
+            // Credentials were saved to DB; warn about the API validation failure
+            // so the admin knows they may need to fix them before rates will work.
             return $this->displayWarning(
                 $this->trans('Configuración guardada. Error al validar credenciales: ', [], 'Modules.Correoargentino.Admin')
                 . htmlspecialchars($e->getMessage())
@@ -616,6 +636,7 @@ class CorreoArgentino extends CarrierModule
             . '&module_name=' . $this->name;
         $helper->token = Tools::getAdminTokenLite('AdminModules');
 
+        // Populate current saved values into the form fields
         $helper->fields_value = [
             'CORREOARG_ENVIRONMENT'     => Configuration::get(self::CFG_ENVIRONMENT) ?: 'TEST',
             'CORREOARG_USER_TOKEN'      => Configuration::get(self::CFG_USER_TOKEN),
@@ -627,6 +648,7 @@ class CorreoArgentino extends CarrierModule
             'CORREOARG_OFFER_SUCURSAL'  => Configuration::get(self::CFG_OFFER_SUCURSAL),
         ];
 
+        // Show current credential status banner above the form
         $customerId = Configuration::get(self::CFG_CUSTOMER_ID);
         $statusHtml = '';
         if ($customerId) {
@@ -683,10 +705,10 @@ class CorreoArgentino extends CarrierModule
             return false;
         }
 
-        $totalWeight = 0;
-        $totalHeight = 0;
-        $maxWidth    = 0;
-        $maxLength   = 0;
+        $totalWeight = 0; // grams
+        $totalHeight = 0; // cm (stacked vertically)
+        $maxWidth    = 0; // cm (widest item, not multiplied by qty)
+        $maxLength   = 0; // cm (longest row: depth × qty per product)
 
         foreach ($products as $product) {
             $qty = max(1, (int) $product['cart_quantity']);
@@ -727,6 +749,8 @@ class CorreoArgentino extends CarrierModule
      */
     private function _getProvinceCode($isoCode)
     {
+        // PS state ISO for Argentina is typically 'AR-B', 'AR-C', etc.
+        // MiCorreo expects the single letter after the dash.
         if (strpos($isoCode, '-') !== false) {
             $parts = explode('-', $isoCode);
 
