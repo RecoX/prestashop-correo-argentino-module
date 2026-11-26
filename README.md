@@ -4,7 +4,7 @@ Integrates Correo Argentino's **MiCorreo / PAQ.AR API** with PrestaShop 9.
 Shows live shipping rates at checkout and automatically imports shipments into MiCorreo after purchase.
 
 **Author:** Conreco Limited — lucas@conreco.com.ar  
-**License:** Commercial — $5 USD per store  
+**License:** Commercial  
 **PrestaShop:** 9.0+  
 **PHP:** 7.4+
 
@@ -54,11 +54,6 @@ PrestaShop evaluates both carriers (Domicilio + Sucursal) for the customer's car
 
 ### After order placement
 `hookActionValidateOrder` fires. The module builds the shipment payload from the order and calls `POST /shipping/import`. Success and errors are logged to PrestaShop's log system (Advanced Parameters → Logs).
-
-## Pricing
-
-**$5 USD** — single store license.  
-Purchase via the PrestaShop Addons Marketplace (listing pending) or contact lucas@conreco.com.ar.
 
 ## Support
 
